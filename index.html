@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-black: #000000;
+            --color-white: #ffffff;
+            --color-gray-400: #9ca3af;
+            --color-gray-300: #d1d5db;
+            --color-zinc-900: #18181b;
+            --color-zinc-950: #09090b;
+            --transition-duration: 300ms;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--color-black);
+            color: var(--color-white);
+            overflow-x: hidden;
+            cursor: none;
+            line-height: 1.6;
+        }
+
+        /* Custom Cursor Styles */
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background-color: var(--color-white);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.15s ease-out;
+            transform: translate(-50%, -50%);
+        }
+
+        .cursor-outline {
+            position: fixed;
+            width: 32px;
+            height: 32px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.2s ease-out, width 0.2s, height 0.2s;
+            transform: translate(-50%, -50%);
+        }
+
+        .cursor-outline.hover {
+            width: 48px;
+            height: 48px;
+        }
+
+        @media (max-width: 768px) {
+            .cursor-dot,
+            .cursor-outline {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+
+        /* Page Loader */
+        .page-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background-color: var(--color-black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .page-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-spinner {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .loader-circle {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--color-white);
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+
+        .loader-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .loader-loading {
+            position: absolute;
+            bottom: 20%;
+            color: var(--color-gray-400);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            transition: all 0.3s ease;
+            background-color: transparent;
+        }
+
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            letter-spacing: -0.05em;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .logo:hover {
+            opacity: 0.8;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-link {
+            position: relative;
+            padding: 0.5rem 1rem;
+            color: var(--color-gray-400);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--color-white);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--color-white);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .mobile-menu {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .mobile-menu.open {
+            display: flex;
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+
+      
+        /* Section Styles */
+        section {
+            padding: 8rem 1.5rem;
+        }
+
+        .section-bg-dark {
+            background-color: rgba(9, 9, 11, 0.5);
+        }
+
+        .container {
+            max-width: 72rem;
+            margin: 0 auto;
+        }
+
+        .container-lg {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 1rem;
+        }
+
+        .section-divider {
+            width: 5rem;
+            height: 4px;
+            background-color: var(--color-white);
+            margin: 0 auto 1.5rem;
+        }
+
+        .section-description {
+            color: var(--color-gray-400);
+            max-width: 42rem;
+            margin: 0 auto;
+        }
+
+        /* About Section */
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            align-items: center;
+            margin-bottom: 5rem;
+        }
+
+        .about-card {
+            position: relative;
+            background-color: var(--color-zinc-900);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .about-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.2), transparent);
+            border-radius: 1rem;
+            filter: blur(40px);
+            z-index: -1;
+        }
+
+        .about-card .profile-image {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            margin: 0 auto 2rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .about-card .profile-image {
+                width: 150px;
+                height: 150px;
+            }
+        }
+
+        .about-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .about-card p {
+            color: var(--color-gray-400);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .typewriter-text {
+            font-family: 'Courier New', Consolas, 'Liberation Mono', Menlo, monospace;
+            color: var(--color-gray-300);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            text-align: justify;
+        }
+
+        .typewriter-cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1.2em;
+            background-color: var(--color-white);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: baseline;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .typewriter-text.completed .typewriter-cursor {
+            animation: none;
+            opacity: 0;
+        }
+
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.5rem;
+            background-color: rgba(24, 24, 27, 0.5);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(4px);
+        }
+
+        .feature-icon {
+            padding: 0.75rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .feature-item:hover .feature-icon {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-content h4 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-content p {
+            color: var(--color-gray-400);
+        }
+
+        /* Skills Section */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .skill-category {
+            background-color: rgba(24, 24, 27, 0.5);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: border-color 0.3s ease;
+        }
+
+        .skill-category:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .skill-category h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .skills-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .skill-item-name {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            color: var(--color-gray-300);
+        }
+
+        .skill-item-level {
+            color: var(--color-gray-400);
+        }
+
+        .skill-bar {
+            height: 0.5rem;
+            background-color: #27272a;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .skill-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ffffff, #9ca3af);
+            border-radius: 9999px;
+            transition: width 1s ease-out;
+            width: 0;
+        }
+
+        .skill-bar-fill.animated {
+            width: var(--skill-level);
+        }
+
+        .tech-stack {
+            margin-top: 4rem;
+            text-align: center;
+        }
+
+        .tech-stack h4 {
+            font-size: 1.25rem;
+            color: var(--color-gray-400);
+            margin-bottom: 1.5rem;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .tech-tag {
+            padding: 0.75rem 1.5rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            color: var(--color-gray-300);
+            transition: all 0.3s ease;
+        }
+
+        .tech-tag:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        /* Projects Section */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .project-card {
+            position: relative;
+            background-color: rgba(24, 24, 27, 0.5);
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .project-image {
+            position: relative;
+            height: 16rem;
+            overflow: hidden;
+        }
+
+        .project-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .project-card:hover .project-image img {
+            transform: scale(1.1);
+        }
+
+        .project-image::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, #18181b, rgba(24, 24, 27, 0.5), transparent);
+            opacity: 0.8;
+        }
+
+        .project-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .project-card:hover .project-overlay {
+            opacity: 1;
+        }
+
+        .project-link {
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: var(--color-white);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .project-content {
+            padding: 1.5rem;
+        }
+
+        .project-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .project-content p {
+            color: var(--color-gray-400);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .project-tag {
+            padding: 0.25rem 0.75rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            color: var(--color-gray-300);
+        }
+
+        .view-more {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .view-more-btn {
+            padding: 1rem 2rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
+            color: var(--color-white);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-more-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Project Modal */
+        .project-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .project-modal-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .project-modal {
+            width: 100%;
+            max-width: 960px;
+            max-height: 80vh;
+            background: rgba(24, 24, 27, 0.95);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+            gap: 2rem;
+            padding: 2rem;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .project-modal {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                max-height: 90vh;
+            }
+        }
+
+        .project-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(39, 39, 42, 0.9);
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .project-modal-close:hover {
+            background: rgba(63, 63, 70, 0.95);
+            transform: scale(1.05);
+        }
+
+        .project-modal-main-image {
+            width: 100%;
+            height: 100%;
+            max-height: 420px;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: #18181b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-modal-main-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .project-modal-thumbs {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.25rem;
+        }
+
+        .project-modal-thumb {
+            width: 70px;
+            height: 50px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            opacity: 0.7;
+            transition: border-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .project-modal-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .project-modal-thumb.active {
+            border-color: rgba(255, 255, 255, 0.7);
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .project-modal-details h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .project-modal-details p {
+            color: var(--color-gray-400);
+            margin-bottom: 1.25rem;
+        }
+
+        .project-modal-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--color-gray-300);
+        }
+
+        .project-modal-meta span {
+            color: var(--color-gray-400);
+        }
+
+        .project-modal-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .project-modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .project-modal-action-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(24, 24, 27, 0.9);
+            color: var(--color-white);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .project-modal-action-btn:hover {
+            background: rgba(39, 39, 42, 0.95);
+            transform: translateY(-1px);
+        }
+
+        /* Contact Section */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+        }
+
+        .contact-info h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-info > p {
+            color: var(--color-gray-400);
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .contact-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: rgba(24, 24, 27, 0.5);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            color: var(--color-white);
+            transition: all 0.3s ease;
+        }
+
+        .contact-item:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .contact-icon {
+            padding: 0.75rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .contact-item:hover .contact-icon {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .contact-item-label {
+            font-size: 0.875rem;
+            color: var(--color-gray-400);
+        }
+
+        .contact-item-value {
+            color: var(--color-white);
+        }
+
+        .contact-quote {
+            position: relative;
+            margin-top: 3rem;
+            padding: 2rem;
+            background-color: rgba(24, 24, 27, 0.3);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .contact-quote::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: 1rem;
+            filter: blur(40px);
+            z-index: -1;
+        }
+
+        .contact-quote p {
+            color: var(--color-gray-300);
+            font-style: italic;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--color-gray-400);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: rgba(24, 24, 27, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            color: var(--color-white);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-group textarea {
+            resize: none;
+            min-height: 150px;
+        }
+
+        .form-submit {
+            padding: 1rem 2rem;
+            background-color: var(--color-white);
+            color: var(--color-black);
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .form-submit:hover {
+            background-color: #e5e5e5;
+            transform: scale(1.02);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--color-zinc-950);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 1.5rem;
+        }
+
+        .footer-container {
+            max-width: 72rem;
+            margin: 0 auto;
+        }
+
+        .footer-top {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-top {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .footer-brand {
+            text-align: center;
+        }
+
+        @media (min-width: 768px) {
+            .footer-brand {
+                text-align: left;
+            }
+        }
+
+        .footer-brand h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .footer-brand h3:hover {
+            opacity: 0.8;
+        }
+
+        .footer-brand p {
+            font-size: 0.875rem;
+            color: var(--color-gray-400);
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .footer-divider {
+            width: 100%;
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .footer-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--color-gray-400);
+            text-align: center;
+        }
+
+        @media (min-width: 768px) {
+            .footer-bottom {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .footer-copyright {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .heart-icon {
+            color: #ef4444;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .footer-links a {
+            color: var(--color-gray-400);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--color-white);
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem;
+            background-color: var(--color-white);
+            color: var(--color-black);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .back-to-top:hover {
+            background-color: #e5e5e5;
+            transform: scale(1.1);
+        }
+
+        /* Utility Classes */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* SVG Icons */
+        .icon {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            section {
+                padding: 4rem 1rem;
+            }
+
+            .about-grid,
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Grain Texture Overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9997;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader-spinner">
+            <div class="loader-circle"></div>
+            <div class="loader-text">A</div>
+        </div>
+        <p class="loader-loading">Loading...</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="nav">
+        <div class="nav-container">
+            <div class="logo" onclick="scrollToSection('home')">
+                <span style="color: white;">Portfolio</span><span style="color: #9ca3af;"></span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link active" data-section="home">Home</a></li>
+                <li><a href="#about" class="nav-link" data-section="about">About</a></li>
+                <li><a href="#skills" class="nav-link" data-section="skills">Skills</a></li>
+                <li><a href="#projects" class="nav-link" data-section="projects">Projects</a></li>
+                <li><a href="#contact" class="nav-link" data-section="contact">Contact</a></li>
+            </ul>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <svg class="icon" id="menuIcon">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+                <svg class="icon" id="closeIcon" style="display: none;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="#home" class="nav-link" data-section="home">Home</a>
+            <a href="#about" class="nav-link" data-section="about">About</a>
+            <a href="#skills" class="nav-link" data-section="skills">Skills</a>
+            <a href="#projects" class="nav-link" data-section="projects">Projects</a>
+            <a href="#contact" class="nav-link" data-section="contact">Contact</a>
+        </div>
+    </nav>
+
+      <!-- Hero Section -->
+      <section class="hero" id="home">
+        <!-- Parallax background layers -->
+        <div class="hero-parallax hero-parallax-back" data-parallax-speed="0.15"></div>
+        <div class="hero-parallax hero-parallax-mid" data-parallax-speed="0.3"></div>
+
+        <div class="hero-container">
+            <!-- Left Content -->
+            <div class="hero-content">
+                <h1 class="name">Adrian Libarnes</h1>
+                <h2 class="title">Web Developer</h2>
+                <p class="location">
+                    <svg class="icon" style="width: 18px; height: 18px; display: inline;">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    From Philippines
+                </p>
+                <div class="hero-cta">
+                    <a href="#projects" class="cta-button cta-primary" onclick="scrollToSection('projects'); return false;">
+                        View My Work
+                        <svg class="icon" style="width: 18px; height: 18px;">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <a href="#contact" class="cta-button cta-secondary" onclick="scrollToSection('contact'); return false;">
+                        Get In Touch
+                    </a>
+                    <a href="assets/Adrian_Libarnes_Resume.pdf" class="cta-button cta-secondary" download>
+                        Download Resume
+                        <svg class="icon" style="width: 18px; height: 18px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Content - Image -->
+            <div class="hero-image-wrapper">
+                <div class="hero-photo-card">
+                    <div class="hero-photo-glow"></div>
+                    <img 
+                        src="Pic2.png" 
+                        alt="Adrian Libarnes - Web Developer"
+                        class="hero-image"
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            Scroll Down
+        </div>
+    </section>
+
+
+    <!-- Project Modal -->
+    <div class="project-modal-backdrop" id="projectModalBackdrop" aria-hidden="true">
+        <div class="project-modal" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle">
+            <button class="project-modal-close" id="projectModalClose" aria-label="Close project details">
+                <svg class="icon" style="width: 18px; height: 18px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div>
+                <div class="project-modal-main-image">
+                    <img id="projectModalMainImage" src="" alt="Project preview">
+                </div>
+                <div class="project-modal-thumbs" id="projectModalThumbs"></div>
+            </div>
+            <div class="project-modal-details">
+                <h3 id="projectModalTitle"></h3>
+                <p id="projectModalDescription"></p>
+                <div class="project-modal-meta">
+                    <div><strong>Role:</strong> <span id="projectModalRole"></span></div>
+                    <div><strong>Timeline:</strong> <span id="projectModalTimeline"></span></div>
+                </div>
+                <div class="project-modal-tags" id="projectModalTags"></div>
+                <div class="project-modal-actions">
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="project-modal-action-btn" id="projectModalGithub">
+                        <svg class="icon" style="width: 18px; height: 18px;">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                        <span>View Code</span>
+                    </a>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="project-modal-action-btn" id="projectModalLive">
+                        <svg class="icon" style="width: 18px; height: 18px;">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        <span>View Live</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <section id="about" class="section-bg-dark">
+        <div class="container">
+            <div class="section-header fade-in">
+                <h2 class="section-title">About Me</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="about-grid">
+                <div class="fade-in">
+                    <div class="about-card">
+                        <img src="Profile.jpg" alt="Adrian Libarnes" class="profile-image">
+                        <h3>Melchor Adrian Libarnes</h3>
+                        <p class="typewriter-text" id="typewriter-text-1"></p>
+                        <p class="typewriter-text" id="typewriter-text-2"></p>
+                    </div>
+                </div>
+                <div class="features-list fade-in">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg class="icon">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Clean Code</h4>
+                            <p>Writing maintainable, scalable, and efficient code</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg class="icon">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Creative Design</h4>
+                            <p>Crafting beautiful and intuitive user interfaces</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg class="icon">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                            </svg>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Performance</h4>
+                            <p>Optimizing for speed and seamless experiences</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills">
+        <div class="container">
+            <div class="section-header fade-in">
+                <h2 class="section-title">Skills & Expertise</h2>
+                <div class="section-divider"></div>
+                <p class="section-description">
+                    A comprehensive toolkit of technologies and skills I use to bring ideas to life
+                </p>
+            </div>
+            <div class="skills-grid">
+                <div class="skill-category fade-in">
+                    <h3>Frontend</h3>
+                    <div class="skills-list">
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>HTML</span>
+                                <span class="skill-item-level">95%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 95%;" data-level="95"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>Tailwind CSS</span>
+                                <span class="skill-item-level">92%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 92%;" data-level="92"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>JavaScript</span>
+                                <span class="skill-item-level">95%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 95%;" data-level="95"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-category fade-in">
+                    <h3>Backend</h3>
+                    <div class="skills-list">
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>Node.js</span>
+                                <span class="skill-item-level">85%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 85%;" data-level="85"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>Django</span>
+                                <span class="skill-item-level">82%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 82%;" data-level="82"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>PHP</span>
+                                <span class="skill-item-level">80%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 80%;" data-level="80"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>MySQL</span>
+                                <span class="skill-item-level">78%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 78%;" data-level="78"></div>
+                            </div>
+                        </div>
+                           <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>Laravel</span>
+                                <span class="skill-item-level">78%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 78%;" data-level="78"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>REST APIs</span>
+                                <span class="skill-item-level">90%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 90%;" data-level="90"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-category fade-in">
+                    <h3>Tools & Others</h3>
+                    <div class="skills-list">
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>Git</span>
+                                <span class="skill-item-level">92%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 92%;" data-level="92"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>Figma</span>
+                                <span class="skill-item-level">88%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 88%;" data-level="88"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-item-name">
+                                <span>UI/UX Design</span>
+                                <span class="skill-item-level">85%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-bar-fill" style="--skill-level: 85%;" data-level="85"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tech-stack fade-in">
+                <h4>Also Working With</h4>
+                <div class="tech-tags">
+                    <span class="tech-tag">PHP</span>
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">Java</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="section-bg-dark">
+        <div class="container-lg">
+            <div class="section-header fade-in">
+                <h2 class="section-title">Featured Projects</h2>
+                <div class="section-divider"></div>
+                <p class="section-description">
+                    A selection of my recent work demonstrating creativity, technical skills, and attention to detail
+                </p>
+            </div>
+            <div class="projects-grid">
+                <div class="project-card fade-in" data-project-id="ecommerce">
+                    <div class="project-image">
+                        <img src="assets/Eccomerce.png" alt="E-Commerce Platform" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>E-Commerce Platform</h3>
+                        <p>A modern e-commerce solution with advanced cart functionality, payment integration, and admin dashboard.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">C#</span>
+                            <span class="project-tag">ASP.NET Core</span>
+                            <span class="project-tag">MySQL</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card fade-in" data-project-id="company-site">
+                    <div class="project-image">
+                        <img src="assets/Company_Weebsite.png" alt="Company Website" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Company Website</h3>
+                        <p>A stunning portfolio website showcasing creative work with smooth animations and modern design.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">PHP</span>
+                            <span class="project-tag">HTML</span>
+                            <span class="project-tag">CSS</span>
+                            <span class="project-tag">JavaScript</span>
+                            <span class="project-tag">Laravel</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card fade-in" data-project-id="ssg-system">
+                    <div class="project-image">
+                        <img src="assets/SSG.png" alt="SSG Management System" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>SSG Management System</h3>
+                        <p>Intuitive mobile banking application with real-time transactions and budget tracking features.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">PHP</span>
+                            <span class="project-tag">HTML</span>
+                            <span class="project-tag">CSS</span>
+                            <span class="project-tag">JavaScript</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card fade-in" data-project-id="inventory-pos">
+                    <div class="project-image">
+                        <img src="assets/Inventory_POS.png" alt="Inventory Management System With POS" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Inventory Management System With POS</h3>
+                        <p>Intuitive mobile banking application with real-time transactions and budget tracking features.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">c#</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card fade-in" data-project-id="brew-culture">
+                    <div class="project-image">
+                        <img src="assets/Brew.png" alt="Brew Culture Coffee Website" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Brew Culture Coffee Website</h3>
+                        <p>Intuitive mobile banking application with real-time transactions and budget tracking features.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">DJANGO</span>
+                            <span class="project-tag">HTML</span>
+                            <span class="project-tag">CSS</span>
+                            <span class="project-tag">JavaScript</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card fade-in" data-project-id="lms">
+                    <div class="project-image">
+                        <img src="assets/LMS.png" alt="Learning Management System" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Learning Management System</h3>
+                        <p>Comprehensive analytics dashboard with real-time data visualization and reporting capabilities.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">HTML</span>
+                            <span class="project-tag">CSS</span>
+                            <span class="project-tag">JavaScript</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card fade-in" data-project-id="jarvis-ai-companion">
+                    <div class="project-image">
+                        <img src="assets/Jarvis.png" alt="Jarvis AI Companion with Voice Command" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Jarvis - An AI Companion with Voice Command</h3>
+                        <p>An AI-powered companion that responds to voice commands for smart assistance, automation, and real-time interactions.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">PHP</span>
+                            <span class="project-tag">HTML</span>
+                            <span class="project-tag">CSS</span>
+                            <span class="project-tag">JavaScript</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card fade-in" data-project-id="cvsu-fams">
+                    <div class="project-image">
+                        <img src="assets/Cvsu-FAMS.png" alt="Facial Recognition Attendance System for Cavite State University" loading="lazy">
+                        <div class="project-overlay">
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                            </a>
+                            <a href="https://example.com" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg class="icon">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Facial Recognition Attendance System for Cavite State University</h3>
+                        <p>A smart attendance solution that uses facial recognition to automate student check-ins, improve accuracy, and streamline attendance tracking at Cavite State University.</p>
+                        <div class="project-tags">
+                            <span class="project-tag">PHP</span>
+                            <span class="project-tag">HTML</span>
+                            <span class="project-tag">CSS</span>
+                            <span class="project-tag">JavaScript</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="view-more fade-in">
+                <button class="view-more-btn">View All Projects</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <div class="container">
+            <div class="section-header fade-in">
+                <h2 class="section-title">Get In Touch</h2>
+                <div class="section-divider"></div>
+                <p class="section-description">
+                    Have a project in mind or want to collaborate? Feel free to reach out!
+                </p>
+            </div>
+            <div class="contact-grid">
+                <div class="contact-info fade-in">
+                    <h3>Let's Talk</h3>
+                    <p>
+                        I'm always interested in hearing about new projects and opportunities.
+                        Whether you have a question or just want to say hi, feel free to get in touch!
+                    </p>
+                    <div class="contact-items">
+                        <a href="mailto:your.email@example.com" class="contact-item">
+                            <div class="contact-icon">
+                                <svg class="icon">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="contact-item-label">Email</p>
+                                <p class="contact-item-value">melchoradrianlibarnes@gmail.com</p>
+                            </div>
+                        </a>
+                        <a href="tel:+15551234567" class="contact-item">
+                            <div class="contact-icon">
+                                <svg class="icon">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="contact-item-label">Phone</p>
+                                <p class="contact-item-value">+63 9062613043</p>
+                            </div>
+                        </a>
+                        <a href="#" class="contact-item">
+                            <div class="contact-icon">
+                                <svg class="icon">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="contact-item-label">Location</p>
+                                <p class="contact-item-value">Bacoor Cavite, Philippines</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="contact-quote">
+                        <p>
+                            "Great design is born from understanding, nurtured by collaboration, and perfected through iteration."
+                        </p>
+                    </div>
+                </div>
+                <form class="contact-form fade-in" id="contactForm">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" placeholder="Your name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="Your message..." required></textarea>
+                    </div>
+                    <button type="submit" class="form-submit">
+                        Send Message
+                        <svg class="icon" style="width: 20px; height: 20px;">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <h3 onclick="scrollToSection('home')">
+                        <span style="color: white;">Portfolio</span><span style="color: #9ca3af;">.</span>
+                    </h3>
+                    <p>Building digital experiences</p>
+                </div>
+                <div class="footer-social">
+                    <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="social-link">
+                        <svg class="icon" style="width: 20px; height: 20px;">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                    </a>
+                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="social-link">
+                        <svg class="icon" style="width: 20px; height: 20px;">
+                            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                            <rect x="2" y="9" width="4" height="12"></rect>
+                            <circle cx="4" cy="4" r="2"></circle>
+                        </svg>
+                    </a>
+                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="social-link">
+                        <svg class="icon" style="width: 20px; height: 20px;">
+                            <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                        </svg>
+                    </a>
+                    <a href="mailto:your.email@example.com" class="social-link">
+                        <svg class="icon" style="width: 20px; height: 20px;">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-divider"></div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">
+                    © <span id="currentYear"></span> All rights reserved. Made with
+                    <svg class="icon heart-icon" style="width: 16px; height: 16px; fill: #ef4444; display: inline;">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    AL
+                </p>
+                <div class="footer-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" onclick="scrollToSection('home')">
+        <svg class="icon">
+            <path d="m18 15-6-6-6 6"></path>
+        </svg>
+    </button>
+
+    <script>
+        // Page Loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelector('.page-loader').classList.add('hidden');
+            }, 2000);
+        });
+
+        // Custom Cursor
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+
+        if (cursorDot && cursorOutline) {
+            let mouseX = 0, mouseY = 0;
+            let outlineX = 0, outlineY = 0;
+
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                cursorDot.style.left = mouseX + 'px';
+                cursorDot.style.top = mouseY + 'px';
+            });
+
+            // Smooth follow for outline
+            function animateOutline() {
+                outlineX += (mouseX - outlineX) * 0.2;
+                outlineY += (mouseY - outlineY) * 0.2;
+                cursorOutline.style.left = outlineX + 'px';
+                cursorOutline.style.top = outlineY + 'px';
+                requestAnimationFrame(animateOutline);
+            }
+            animateOutline();
+
+            // Hover effect
+            document.addEventListener('mouseover', (e) => {
+                const target = e.target;
+                if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
+                    cursorOutline.classList.add('hover');
+                    cursorDot.style.transform = 'translate(-50%, -50%) scale(0)';
+                } else {
+                    cursorOutline.classList.remove('hover');
+                    cursorDot.style.transform = 'translate(-50%, -50%) scale(1)';
+                }
+            });
+        }
+
+        // Navigation
+        const nav = document.getElementById('nav');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const menuIcon = document.getElementById('menuIcon');
+        const closeIcon = document.getElementById('closeIcon');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const parallaxLayers = document.querySelectorAll('.hero-parallax');
+
+        function updateParallax() {
+            const scrollY = window.scrollY || window.pageYOffset;
+            parallaxLayers.forEach(layer => {
+                const speed = parseFloat(layer.dataset.parallaxSpeed || '0.25');
+                layer.style.transform = `translateY(${scrollY * speed * -1}px)`;
+            });
+        }
+
+        // Scroll handler for navigation & parallax
+        window.addEventListener('scroll', () => {
+            updateParallax();
+            // Update active section
+            updateActiveSection();
+
+            // Show/hide back to top button
+            const backToTop = document.getElementById('backToTop');
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // Mobile menu toggle
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('open');
+            if (mobileMenu.classList.contains('open')) {
+                menuIcon.style.display = 'none';
+                closeIcon.style.display = 'block';
+            } else {
+                menuIcon.style.display = 'block';
+                closeIcon.style.display = 'none';
+            }
+        });
+
+        // Smooth scroll to section
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+                mobileMenu.classList.remove('open');
+                menuIcon.style.display = 'block';
+                closeIcon.style.display = 'none';
+            }
+        }
+
+        // Navigation link click handlers
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sectionId = link.getAttribute('data-section');
+                scrollToSection(sectionId);
+            });
+        });
+
+        // Update active section based on scroll
+        function updateActiveSection() {
+            const sections = ['home', 'about', 'skills', 'projects', 'contact'];
+            const scrollPosition = window.scrollY + 100;
+
+            sections.forEach(sectionId => {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    const offsetTop = element.offsetTop;
+                    const offsetHeight = element.offsetHeight;
+
+                    if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+                        navLinks.forEach(link => {
+                            if (link.getAttribute('data-section') === sectionId) {
+                                link.classList.add('active');
+                            } else {
+                                link.classList.remove('active');
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Project Modal Logic
+        const projectConfigs = {
+            'ecommerce': {
+                title: 'E-Commerce Platform',
+                role: 'Full-stack Developer',
+                timeline: '2024',
+                description: 'A full-featured e-commerce platform with product management, cart, checkout, and admin analytics.',
+                tags: ['C#', 'ASP.NET Core', 'MySQL'],
+                images: ['assets/Eccomerce.png'],
+                github: '#',
+                live: '#'
+            },
+            'company-site': {
+                title: 'Company Website',
+                role: 'Frontend Developer',
+                timeline: '2024',
+                description: 'Responsive company website with CMS-driven content and custom landing sections.',
+                tags: ['PHP', 'HTML', 'CSS', 'JavaScript', 'Laravel'],
+                images: ['assets/Company_Weebsite.png'],
+                github: '#',
+                live: '#'
+            },
+            'ssg-system': {
+                title: 'SSG Management System',
+                role: 'Full-stack Developer',
+                timeline: '2023',
+                description: 'Student government management system for tracking activities, documents, and members.',
+                tags: ['PHP', 'HTML', 'CSS', 'JavaScript'],
+                images: ['assets/SSG.png'],
+                github: '#',
+                live: '#'
+            },
+            'inventory-pos': {
+                title: 'Inventory Management System With POS',
+                role: 'Desktop Application Developer',
+                timeline: '2023',
+                description: 'Inventory and point-of-sale desktop application with reporting and barcode support.',
+                tags: ['C#'],
+                images: ['assets/Inventory_POS.png'],
+                github: '#',
+                live: '#'
+            },
+            'brew-culture': {
+                title: 'Brew Culture Coffee Website',
+                role: 'Full-stack Developer',
+                timeline: '2023',
+                description: 'Coffee shop website with menu, online orders, and blog section.',
+                tags: ['Django', 'HTML', 'CSS', 'JavaScript'],
+                images: ['assets/Brew.png'],
+                github: '#',
+                live: '#'
+            },
+            'lms': {
+                title: 'Learning Management System',
+                role: 'Full-stack Developer',
+                timeline: '2022',
+                description: 'LMS for managing courses, students, and assessments with progress tracking.',
+                tags: ['HTML', 'CSS', 'JavaScript'],
+                images: ['assets/LMS.png'],
+                github: '#',
+                live: '#'
+            },
+            'jarvis-ai-companion': {
+                title: 'Jarvis - An AI Companion with Voice Command',
+                role: 'AI Application Developer',
+                timeline: '2026',
+                description: 'An AI-powered companion that responds to voice commands for smart assistance, automation, and real-time interactions.',
+                tags: ['PHP', 'HTML', 'CSS', 'JavaScript'],
+                images: ['assets/Jarvis.png', 'assets/Jarvis_Sub1.png'],
+                github: '#',
+                live: '#'
+            },
+            'cvsu-fams': {
+                title: 'Facial Recognition Attendance System for Cavite State University',
+                role: 'Full-stack Developer',
+                timeline: '2026',
+                description: 'A facial recognition-based attendance system for Cavite State University that improves check-in speed, attendance accuracy, and reporting efficiency.',
+                tags: ['PHP', 'HTML', 'CSS', 'JavaScript'],
+                images: ['assets/Cvsu-FAMS.png', 'assets/Cvsu-FAMS1.png', 'assets/Cvsu-FAMS2.png'],
+                github: '#',
+                live: '#'
+            }
+        };
+
+        const projectModalBackdrop = document.getElementById('projectModalBackdrop');
+        const projectModalClose = document.getElementById('projectModalClose');
+        const projectModalMainImage = document.getElementById('projectModalMainImage');
+        const projectModalThumbs = document.getElementById('projectModalThumbs');
+        const projectModalTitle = document.getElementById('projectModalTitle');
+        const projectModalDescription = document.getElementById('projectModalDescription');
+        const projectModalRole = document.getElementById('projectModalRole');
+        const projectModalTimeline = document.getElementById('projectModalTimeline');
+        const projectModalTags = document.getElementById('projectModalTags');
+        const projectModalGithub = document.getElementById('projectModalGithub');
+        const projectModalLive = document.getElementById('projectModalLive');
+
+        let currentProjectImages = [];
+        let currentImageIndex = 0;
+
+        function openProjectModal(projectId) {
+            const config = projectConfigs[projectId];
+            if (!config) return;
+
+            projectModalTitle.textContent = config.title;
+            projectModalDescription.textContent = config.description;
+            projectModalRole.textContent = config.role;
+            projectModalTimeline.textContent = config.timeline;
+
+            projectModalTags.innerHTML = '';
+            config.tags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'project-tag';
+                span.textContent = tag;
+                projectModalTags.appendChild(span);
+            });
+
+            projectModalGithub.href = config.github || '#';
+            projectModalLive.href = config.live || '#';
+
+            currentProjectImages = config.images && config.images.length ? config.images : [];
+            currentImageIndex = 0;
+
+            projectModalThumbs.innerHTML = '';
+            currentProjectImages.forEach((url, index) => {
+                const thumb = document.createElement('button');
+                thumb.type = 'button';
+                thumb.className = 'project-modal-thumb' + (index === 0 ? ' active' : '');
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = config.title + ' thumbnail ' + (index + 1);
+                thumb.appendChild(img);
+                thumb.addEventListener('click', () => setProjectModalImage(index));
+                projectModalThumbs.appendChild(thumb);
+            });
+
+            setProjectModalImage(0);
+
+            projectModalBackdrop.classList.add('open');
+            projectModalBackdrop.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProjectModal() {
+            projectModalBackdrop.classList.remove('open');
+            projectModalBackdrop.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        function setProjectModalImage(index) {
+            if (!currentProjectImages.length) return;
+            currentImageIndex = index;
+            projectModalMainImage.src = currentProjectImages[index];
+
+            const thumbs = projectModalThumbs.querySelectorAll('.project-modal-thumb');
+            thumbs.forEach((thumb, i) => {
+                if (i === index) thumb.classList.add('active');
+                else thumb.classList.remove('active');
+            });
+        }
+
+        projectModalClose.addEventListener('click', closeProjectModal);
+        projectModalBackdrop.addEventListener('click', (e) => {
+            if (e.target === projectModalBackdrop) {
+                closeProjectModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeProjectModal();
+            }
+        });
+
+        document.querySelectorAll('.project-card').forEach(card => {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', () => {
+                const id = card.getAttribute('data-project-id');
+                if (id) {
+                    openProjectModal(id);
+                }
+            });
+        });
+
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '-100px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    
+                    // Start typewriter animation when about section is visible
+                    if (entry.target.id === 'about' || entry.target.closest('#about')) {
+                        startTypewriterAnimation();
+                    }
+                    
+                    // Animate skill bars
+                    if (entry.target.classList.contains('skill-category')) {
+                        const skillBars = entry.target.querySelectorAll('.skill-bar-fill');
+                        skillBars.forEach(bar => {
+                            bar.classList.add('animated');
+                        });
+                    }
+                }
+            });
+        }, observerOptions);
+
+        // Observe about section specifically
+        const aboutSection = document.getElementById('about');
+        if (aboutSection) {
+            observer.observe(aboutSection);
+        }
+
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+        // Contact form submission
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Message sent! (This is a demo)');
+            e.target.reset();
+        });
+
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Initialize
+        updateActiveSection();
+        updateParallax();
+    </script>
+</body>
+</html>
